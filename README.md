@@ -220,7 +220,7 @@ In a terminal, `progress.cmd` points at the installed copy (the hooks keep it up
 
 ```
 %LOCALAPPDATA%\progress-hud\progress.cmd status [dir]    Show progress as text
-%LOCALAPPDATA%\progress-hud\progress.cmd open [dir]      Open the dashboard (starts the server if needed)
+%LOCALAPPDATA%\progress-hud\progress.cmd open [dir]      Open the dashboard unless one is already open (--force opens another)
 %LOCALAPPDATA%\progress-hud\progress.cmd serve           Run the server in the foreground
 %LOCALAPPDATA%\progress-hud\progress.cmd lang [auto|en|zh-TW]
 %LOCALAPPDATA%\progress-hud\progress.cmd plan set|start|done|add|remove|show …   Update progress by hand

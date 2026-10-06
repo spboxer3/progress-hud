@@ -220,7 +220,7 @@ hook 自己出錯時絕對不會擋住 AI：錯誤寫進 `%LOCALAPPDATA%\progres
 
 ```
 %LOCALAPPDATA%\progress-hud\progress.cmd status [資料夾]   以文字顯示進度
-%LOCALAPPDATA%\progress-hud\progress.cmd open [資料夾]     開啟看板（需要時自動啟動伺服器）
+%LOCALAPPDATA%\progress-hud\progress.cmd open [資料夾]     開啟看板；已經開著就不另開（加 --force 強制另開）
 %LOCALAPPDATA%\progress-hud\progress.cmd serve            在前景執行伺服器
 %LOCALAPPDATA%\progress-hud\progress.cmd lang [auto|en|zh-TW]
 %LOCALAPPDATA%\progress-hud\progress.cmd plan set|start|done|add|remove|show …   手動更新進度
