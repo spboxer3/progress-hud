@@ -1,6 +1,6 @@
 {
   "name": "progress-hud",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Live project progress for AI agents: project, feature and step progress on a local dashboard you can open in the Codex side panel",
   "author": {
     "name": "Roland Chien"

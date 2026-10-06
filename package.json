@@ -1,6 +1,6 @@
 {
   "name": "progress-hud",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Hierarchical project progress HUD for Codex CLI/Desktop and Claude Code CLI/Desktop",
   "type": "module",
   "private": true,
