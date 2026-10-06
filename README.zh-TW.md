@@ -246,7 +246,7 @@ npm run test:pane   Claude Code 側邊欄面板測試（需要 Claude Code）
 ```
 .claude-plugin/        Claude Code 外掛資訊與 marketplace
 .agents/plugins/       Codex marketplace
-plugin.json            Codex 外掛資訊
+.codex-plugin/         Codex 外掛資訊
 hooks/hooks.json       Claude Code 的 hook 與側邊欄模組
 hooks/codex-hooks.json Codex 的 hook
 codex-skills/          Codex 的 skill（`progress` 開啟看板）

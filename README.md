@@ -246,7 +246,7 @@ npm run test:pane   Claude Code side pane tests (requires Claude Code)
 ```
 .claude-plugin/        Claude Code plugin manifest and marketplace
 .agents/plugins/       Codex marketplace
-plugin.json            Codex plugin manifest
+.codex-plugin/         Codex plugin manifest
 hooks/hooks.json       Claude Code hooks and side pane module
 hooks/codex-hooks.json Codex hooks
 codex-skills/          Codex skills (`progress` opens the dashboard)
