@@ -102,7 +102,13 @@ async function onPlanTool(ev, root) {
   if (tool === 'ExitPlanMode' && steps && !steps.some(s => core.parseStep(s.text).formatted)) return null;
 
   const firstTime = !hasProject(root);
-  if (!subagent && steps && !firstTime) core.maybeStartMilestone(root, steps);
+  if (!subagent && !firstTime) {
+    if (steps) core.maybeStartMilestone(root, steps);
+    // Task tools add one step at a time: a session's first task is where a new plan begins
+    else if (task?.subject && !core.loadSession(root, AGENT, ev.session_id, core.readProject(root)?.epoch || 1).versions.length) {
+      core.maybeStartMilestone(root, [{ text: task.subject }]);
+    }
+  }
   const proj = core.ensureProject(root);
   const s = core.loadSession(root, AGENT, ev.session_id, proj.epoch || 1);
   let result = { unformatted: [] };

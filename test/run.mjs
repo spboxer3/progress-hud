@@ -128,6 +128,18 @@ hook('claude', { session_id: 'c9', hook_event_name: 'PostToolUse', tool_name: 'T
 ] } });
 a = agg();
 check('a new task reusing F1 numbers starts a new milestone', a.epoch === 3 && a.total === 2 && a.tree[0].name === '頁尾', { epoch: a.epoch, total: a.total, names: a.tree.map(f => f.name) });
+hook('claude', { session_id: 'c9', hook_event_name: 'PostToolUse', tool_name: 'TodoWrite', tool_input: { todos: [
+  { content: 'F1 頁尾 › F1.1 加版權文字', status: 'completed', activeForm: 'x' },
+  { content: 'F1 頁尾 › F1.2 驗證', status: 'completed', activeForm: 'x' },
+] } });
+const taskCreate = (sid, id, subject) => hook('claude', { session_id: sid, hook_event_name: 'PostToolUse', tool_name: 'TaskCreate', tool_input: { subject, description: 'x' }, tool_response: { task: { id, subject } } });
+taskCreate('c9', '1', 'F1 頁尾 › F1.3 補連結');
+check('same session adding a task to a finished plan continues it', agg().epoch === 3 && agg().total === 3);
+hook('claude', { session_id: 'c9', hook_event_name: 'PostToolUse', tool_name: 'TaskUpdate', tool_input: { taskId: '1', status: 'completed' } });
+taskCreate('t2', '1', 'F1 表單 › F1.1 欄位驗證');
+taskCreate('t2', '2', 'F1 表單 › F1.2 錯誤訊息');
+a = agg();
+check('a new session starting with TaskCreate starts a new milestone', a.epoch === 4 && a.total === 2 && a.tree[0].name === '表單', { epoch: a.epoch, total: a.total, names: a.tree.map(f => f.name) });
 
 console.log('Claude: ExitPlanMode markdown, TaskCreate/TaskUpdate');
 const P2 = path.join(TMP, 'claude proj');
