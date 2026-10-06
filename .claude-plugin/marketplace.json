@@ -1,0 +1,14 @@
+{
+  "name": "progress-hud",
+  "description": "Live project progress for Claude Code and Codex: project, feature and step progress from the agent to-do list",
+  "owner": {
+    "name": "Roland Chien"
+  },
+  "plugins": [
+    {
+      "name": "progress-hud",
+      "source": "./",
+      "description": "Live project progress for AI agents: side pane, local dashboard and status line"
+    }
+  ]
+}

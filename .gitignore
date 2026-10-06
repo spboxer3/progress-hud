@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# progress data written by the hooks (when this repo itself is the active project)
+.progress/
+
+# files Claude Code generates next to the pane plugin when it loads it
+/.claude-plugin/types/
+/tsconfig.json
+
+# backups, logs and temp files
+*.bak
+*.bak-*
+*.tmp
+*.log
+.lock/
+
+# local tool output
+.playwright-cli/
+coverage/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

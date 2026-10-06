@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Progress HUD</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232f7a5b'/%3E%3Crect x='3' y='7' width='7' height='2' fill='white'/%3E%3C/svg%3E">
+<style type="text/css">
+/* Sidebar first: one narrow column, summary on top, feature tree below */
+:root {
+  --bg: #f5f6f3; --surface: #ffffff; --fg: #1c2320; --muted: #5f6b65; --line: #dce1dc;
+  --accent: #2f7a5b; --accent-soft: #e2f0e9;
+  --doing: #2563c9; --doing-soft: #e3ecfb;
+  --warn: #9a6400; --warn-soft: #fdf0d5;
+  --bad: #b3261e; --bad-soft: #fbe4e2;
+  --font: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111513; --surface: #1a201d; --fg: #eef3f0; --muted: #a7b5ad; --line: #323d37;
+    --accent: #6fd1a4; --accent-soft: #1f3a2d; --doing: #8db8ff; --doing-soft: #1d2b45;
+    --warn: #ffcc66; --warn-soft: #3a2e14; --bad: #ff8a80; --bad-soft: #3f1d1b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111513; --surface: #1a201d; --fg: #eef3f0; --muted: #a7b5ad; --line: #323d37;
+  --accent: #6fd1a4; --accent-soft: #1f3a2d; --doing: #8db8ff; --doing-soft: #1d2b45;
+  --warn: #ffcc66; --warn-soft: #3a2e14; --bad: #ff8a80; --bad-soft: #3f1d1b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.6 var(--font); }
+.wrap { max-width: 880px; margin: 0 auto; padding-inline: 14px; padding-block: 12px 40px; }
+.top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.top select { flex: 1 1 160px; min-width: 0; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+button { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+button:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.on { background: var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-top: 12px; }
+.hero h1 { font-size: 17px; margin: 0; line-height: 1.4; word-break: break-all; }
+.hero .root { font: 11px var(--mono); color: var(--muted); word-break: break-all; }
+.big { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.big .pct { font: 700 34px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.big .of { color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.bar.sm { height: 5px; }
+.meta { display: flex; gap: 6px 12px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 8px; }
+.light { display: inline-flex; align-items: center; gap: 5px; }
+.light::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.light.stale::before { background: var(--warn); }
+.light.none::before { background: var(--muted); }
+.chip { display: inline-block; font-size: 11px; border-radius: 4px; padding: 0 6px; line-height: 18px; white-space: nowrap; }
+.c-todo { background: var(--line); color: var(--muted); }
+.c-doing { background: var(--doing-soft); color: var(--doing); }
+.c-done { background: var(--accent-soft); color: var(--accent); }
+.c-warn { background: var(--warn-soft); color: var(--warn); }
+.c-bad { background: var(--bad-soft); color: var(--bad); }
+.warns { display: grid; gap: 6px; margin-top: 10px; }
+.warns div { font-size: 12px; border-radius: 6px; padding: 6px 10px; }
+.now { display: grid; gap: 4px; font-size: 13px; }
+.nowrow { display: grid; grid-template-columns: minmax(4em, max-content) 1fr; gap: 12px; }
+.nowrow > div { min-width: 0; overflow-wrap: anywhere; display: grid; gap: 2px; }
+.now b { color: var(--muted); font-weight: 500; }
+h2 { font-size: 12px; letter-spacing: .06em; color: var(--muted); margin: 22px 0 0; font-weight: 600; }
+details.feat { border-top: 1px solid var(--line); }
+details.feat:first-of-type { border-top: 0; }
+details.feat > summary { list-style: none; cursor: pointer; padding: 10px 0; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+details.feat > summary::-webkit-details-marker { display: none; }
+.fname { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.fname .fid { font: 12px var(--mono); color: var(--muted); margin-right: 6px; }
+.fpct { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+summary .bar { grid-column: 1 / -1; }
+ul.items { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 2px; }
+ul.items ul.items { margin: 2px 0 2px 18px; }
+.it { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: start; padding: 4px 6px; border-radius: 6px; }
+.it.doing { background: var(--doing-soft); }
+.it .ic { font: 12px/20px var(--mono); color: var(--muted); text-align: center; }
+.it.done .ic { color: var(--accent); }
+.it.doing .ic { color: var(--doing); }
+.it .nm { min-width: 0; overflow-wrap: anywhere; }
+.it .nm .iid { font: 11px var(--mono); color: var(--muted); margin-right: 5px; }
+.it.done .nm .t { color: var(--muted); }
+.it.gone { opacity: .55; }
+.it.gone .nm .t { text-decoration: line-through; }
+.tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.sub { margin: 2px 0 4px 24px; border-left: 2px dashed var(--line); padding-left: 8px; font-size: 12px; color: var(--muted); }
+.list { display: grid; gap: 6px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.row .grow { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.mono { font-family: var(--mono); font-size: 12px; }
+.muted { color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 28px 10px; }
+.empty code { font-family: var(--mono); background: var(--line); border-radius: 4px; padding: 1px 5px; }
+.ver { margin-top: 6px; }
+.ver ol { margin: 6px 0 0; padding-left: 20px; font-size: 12px; }
+.hb { font-size: 12px; color: var(--muted); display: grid; gap: 2px; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="dot" id="conn"></span>
+    <select id="proj"></select>
+    <button id="theme" type="button"></button>
+  </div>
+  <div id="app"><div class="empty">…</div></div>
+</div>
+
+<script type="text/javascript">
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem('phud.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem('phud.' + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  var state = { projects: [], current: null, data: null, view: null, collapsed: store.get('collapsed', {}) };
+
+  // ---------- language (strings come from the server: /api/i18n) ----------
+  var S = {}, LANG = 'en';
+  function T(key, vars) {
+    var s = S[key] != null ? S[key] : key;
+    return String(s).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? vars[k] : m; });
+  }
+  function applyStatic() {
+    document.documentElement.lang = T('htmlLang');
+    document.title = T('title');
+    $('#conn').title = T('live');
+    $('#proj').setAttribute('aria-label', T('pickProject'));
+    applyTheme();
+  }
+
+  // ---------- theme ----------
+  var theme = store.get('theme', null);
+  function isDark() { return theme ? theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+  function applyTheme() {
+    if (theme) document.documentElement.setAttribute('data-theme', theme); else document.documentElement.removeAttribute('data-theme');
+    $('#theme').textContent = isDark() ? T('themeLight') : T('themeDark');
+  }
+  $('#theme').addEventListener('click', function () {
+    theme = isDark() ? 'light' : 'dark'; store.set('theme', theme); applyTheme();
+  });
+
+  // ---------- helpers ----------
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function ago(iso) {
+    if (!iso) return T('agoNever');
+    var m = Math.round((Date.now() - Date.parse(iso)) / 60000);
+    if (m < 1) return T('agoNow'); if (m < 60) return T('agoMin', { n: m });
+    var h = Math.round(m / 60); if (h < 48) return T('agoHour', { n: h });
+    return T('agoDay', { n: Math.round(h / 24) });
+  }
+  var AGENT = { codex: 'Codex', claude: 'Claude' };
+  function agentName(tag) { var a = String(tag || '').split('·')[0]; return AGENT[a] || a; }
+  function bar(p, sm) { return '<div class="bar' + (sm ? ' sm' : '') + '"><i style="width:' + (p || 0) + '%"></i></div>'; }
+  function label(key, name) { return String(key).indexOf('U-') === 0 ? name : key + ' ' + name; }
+  function chip(cls, text, title) { return '<span class="chip ' + cls + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(text) + '</span>'; }
+
+  function statusTags(n) {
+    var t = [];
+    if (n.missing) t.push(chip('c-todo', T('tagMissing')));
+    else if (n.status === 'deleted') t.push(chip('c-todo', T('tagDeleted')));
+    else if (n.status === 'doing') {
+      t.push(chip('c-doing', n.paused ? T('paused') : T('stDoing')));
+      (n.workers || [n.by]).filter(Boolean).forEach(function (w) { t.push(chip('c-todo', agentName(w))); });
+    } else if (n.status === 'done') {
+      if (n.verified === 'pass') t.push(chip('c-done', T('tagVerified'), n.verifyDetail));
+      else if (n.verified === 'fail') t.push(chip('c-bad', T('tagFailed'), n.verifyDetail));
+      else t.push(chip('c-done', T('stDone')));
+    }
+    return t.join('');
+  }
+  function icon(n) { return n.missing || n.status === 'deleted' ? '–' : n.status === 'done' ? '✓' : n.status === 'doing' ? '▸' : '○'; }
+
+  function renderItems(list) {
+    if (!list || !list.length) return '';
+    return '<ul class="items">' + list.map(function (n) {
+      var cls = 'it ' + (n.missing || n.status === 'deleted' ? 'gone' : n.status);
+      var kids = n.children && n.children.length ? renderItems(n.children) : '';
+      var pct = n.children && n.children.length ? ' <span class="fpct">' + n.pct + '%</span>' : '';
+      var subs = (n.subagents || []).map(function (s) {
+        return '<div class="sub">' + esc(T('subagent', { type: s.agentType })) + s.items.map(function (x) {
+          return (x.status === 'done' ? '✓ ' : x.status === 'doing' ? '▸ ' : '○ ') + esc(x.name);
+        }).join('　') + '</div>';
+      }).join('');
+      var check = n.check && n.status !== 'done' ? ' ' + chip('c-todo', T('checkLabel', { check: n.check }), T('checkTitle')) : '';
+      return '<li><div class="' + cls + '"><span class="ic">' + icon(n) + '</span><span class="nm"><span class="iid">' + esc(String(n.key).indexOf('U-') === 0 ? '' : n.key) + '</span><span class="t">' + esc(n.name) + '</span>' + pct + check + '</span><span class="tags">' + statusTags(n) + '</span></div>' + subs + kids + '</li>';
+    }).join('') + '</ul>';
+  }
+
+  function renderTree(tree, scope) {
+    if (!tree.length) return '<div class="empty">' + esc(T('noSteps')) + '</div>';
+    return tree.map(function (f) {
+      var key = scope + ':' + f.id;
+      var open = state.collapsed[key] ? '' : ' open';
+      var head = '<summary><span class="fname"><span class="fid">' + esc(f.id === 'U' ? '' : f.id) + '</span>' + esc(f.name) + '</span><span class="fpct">' + f.done + '/' + f.total + '　' + f.pct + '%</span>' + bar(f.pct, true) + '</summary>';
+      var body = f.children.length ? renderItems(f.children) : renderItems([Object.assign({}, f, { key: f.id, children: [] })]);
+      return '<details class="feat" data-key="' + esc(key) + '"' + open + '>' + head + body + '</details>';
+    }).join('');
+  }
+
+  function heartbeatHtml(hb) {
+    var rows = ['codex', 'claude'].map(function (a) {
+      var h = hb && hb[a];
+      if (!h) return '<div>' + esc(T('hookNever', { agent: AGENT[a] }) + (a === 'codex' ? T('hookNeverCodex') : '')) + '</div>';
+      return '<div>' + esc(T('hookLast', { agent: AGENT[a], ago: ago(h.at), event: h.event })) + '</div>';
+    });
+    return '<div class="hb">' + rows.join('') + '</div>';
+  }
+
+  var STATUS_KEY = { done: 'stDone', doing: 'stDoing', todo: 'stTodo', deleted: 'stDeleted' };
+
+  function render() {
+    var d = state.data;
+    var app = $('#app');
+    if (!state.projects.length) {
+      app.innerHTML = '<div class="card empty"><p><b>' + esc(T('emptyTitle')) + '</b></p><p>' + esc(T('emptyBody')) + '</p><p>' + esc(T('emptyFormat')) + ' <code>' + esc(T('emptyExample')) + '</code></p></div>' + heartbeatHtml(state.heartbeat);
+      return;
+    }
+    if (!d) { app.innerHTML = '<div class="empty">' + esc(T('loading')) + '</div>'; return; }
+    if (state.view && state.view.type === 'milestone') return renderMilestone();
+
+    var light = !d.lastPlanAt ? 'none' : d.stale ? 'stale' : '';
+    var html = '';
+    html += '<div class="card hero"><h1>' + esc(d.name) + '</h1><div class="root">' + esc(d.root) + '</div>';
+    html += '<div class="big"><span class="pct">' + d.pct + '%</span><span class="of">' + esc(T('itemsDone', { done: d.done, total: d.total })) + '</span>' + (d.paused ? chip('c-warn', T('paused')) : '') + (d.pct === 100 && d.total ? chip('c-done', T('allDone')) : '') + '</div>';
+    html += '<div style="margin-top:8px">' + bar(d.pct) + '</div>';
+    html += '<div class="meta"><span class="light ' + light + '">' + esc(T('lastPlan', { ago: ago(d.lastPlanAt) })) + '</span><span>' + esc(T('lastEdit', { ago: ago(d.lastActivityAt) })) + '</span>' + (d.epoch > 1 ? '<span>' + esc(T('epoch', { n: d.epoch })) + '</span>' : '') + '</div>';
+    if (d.warnings.length) html += '<div class="warns">' + d.warnings.map(function (w) { return '<div class="' + (w.level === 'warn' ? 'c-warn' : 'c-todo') + '">' + esc(w.text) + '</div>'; }).join('') + '</div>';
+    html += '</div>';
+
+    var none = '<span class="muted">' + esc(T('none')) + '</span>';
+    html += '<div class="card now">';
+    html += '<div class="nowrow"><b>' + esc(T('current')) + '</b><div>' + (d.current.length ? d.current.map(function (c) { return '<div>' + esc(label(c.key, c.name)) + ' ' + chip('c-todo', c.workers.map(agentName).join(T('workerSep'))) + '</div>'; }).join('') : none) + '</div></div>';
+    html += '<div class="nowrow"><b>' + esc(T('next')) + '</b><div>' + (d.next ? esc(label(d.next.key, d.next.name)) : none) + '</div></div>';
+    html += '</div>';
+
+    html += '<h2>' + esc(T('features')) + '</h2><div class="card">' + renderTree(d.tree, d.id + ':' + d.epoch) + '</div>';
+
+    var active = d.sessions.filter(function (s) { return s.active && s.versions.length; });
+    if (active.length) {
+      html += '<h2>' + esc(T('sessions')) + '</h2><div class="card list">';
+      active.forEach(function (s) {
+        var sid = String(s.sessionId);
+        html += '<div class="row">' + chip('c-doing', AGENT[s.agent] || s.agent) + '<span class="grow mono" title="' + esc(sid) + '">' + esc(sid.length > 16 ? '…' + sid.slice(-12) : sid) + '</span><span class="muted">' + esc(ago(s.updatedAt)) + '</span>' + (s.paused ? chip('c-warn', T('pausedShort')) : '') + '</div>';
+        if (s.versions.length > 1) {
+          html += '<div class="ver"><span class="muted">' + esc(T('replans', { n: s.versions.length - 1 })) + '</span> ' + s.versions.map(function (v) {
+            return '<button type="button" data-ver="' + esc(sid) + '|' + v.v + '">v' + v.v + '</button>';
+          }).join(' ') + '</div>';
+          if (state.view && state.view.type === 'version' && state.view.sid === sid) {
+            var v = s.versions.filter(function (x) { return x.v === state.view.v; })[0];
+            if (v) html += '<div class="ver"><span class="muted">' + esc(T('versionInfo', { v: v.v, ago: ago(v.createdAt), reason: T(v.reason === 'replan' ? 'reasonReplan' : 'reasonFirst') })) + '</span><ol>' + v.items.map(function (i) {
+              return '<li>' + esc(label(i.id, i.name)) + ' ' + chip(i.status === 'done' ? 'c-done' : i.status === 'doing' ? 'c-doing' : 'c-todo', STATUS_KEY[i.status] ? T(STATUS_KEY[i.status]) : i.status) + '</li>';
+            }).join('') + '</ol></div>';
+          }
+        }
+      });
+      html += '</div>';
+    }
+
+    if (d.milestones.length) {
+      html += '<h2>' + esc(T('milestones')) + '</h2><div class="card list">' + d.milestones.slice().reverse().map(function (m) {
+        return '<div class="row">' + chip('c-done', '✓') + '<span class="grow">' + esc(m.title) + '</span><span class="muted">' + esc(T('msMeta', { total: m.total, ago: ago(m.completedAt) })) + '</span><button type="button" data-ms="' + m.epoch + '">' + esc(T('view')) + '</button></div>';
+      }).join('') + '</div>';
+    }
+    html += heartbeatHtml(d.heartbeat);
+    app.innerHTML = html;
+  }
+
+  function renderMilestone() {
+    var m = state.view.data;
+    $('#app').innerHTML = '<div class="card"><button type="button" id="back">' + esc(T('back')) + '</button><h1 style="font-size:17px;margin:10px 0 0">' + esc(m.title) + '</h1><div class="meta"><span>' + esc(T('completedAt', { date: new Date(m.completedAt).toLocaleString(LANG) })) + '</span><span>' + esc(T('msTotal', { total: m.total })) + '</span></div></div><div class="card">' + renderTree(m.tree, 'ms' + m.epoch) + '</div>';
+  }
+
+  // ---------- events ----------
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.id === 'back') { state.view = null; render(); return; }
+    if (t.dataset && t.dataset.ver) {
+      var p = t.dataset.ver.split('|');
+      var same = state.view && state.view.sid === p[0] && state.view.v === Number(p[1]);
+      state.view = same ? null : { type: 'version', sid: p[0], v: Number(p[1]) };
+      render(); return;
+    }
+    if (t.dataset && t.dataset.ms) {
+      fetch('/api/project/' + state.current + '/milestone/' + t.dataset.ms).then(function (r) { return r.json(); }).then(function (m) {
+        state.view = { type: 'milestone', data: m }; render();
+      });
+    }
+  });
+  document.addEventListener('toggle', function (e) {
+    var el = e.target;
+    if (!el.classList || !el.classList.contains('feat')) return;
+    if (el.open) delete state.collapsed[el.dataset.key]; else state.collapsed[el.dataset.key] = 1;
+    store.set('collapsed', state.collapsed);
+  }, true);
+  $('#proj').addEventListener('change', function () {
+    state.current = this.value; state.view = null; store.set('project', state.current);
+    history.replaceState(null, '', '?p=' + state.current);
+    loadProject();
+  });
+
+  // ---------- data ----------
+  function loadStrings() {
+    return fetch('/api/i18n').then(function (r) { return r.json(); }).then(function (j) {
+      S = j.strings || {}; LANG = j.lang || 'en'; applyStatic();
+    });
+  }
+  function loadProjects() {
+    return fetch('/api/projects').then(function (r) { return r.json(); }).then(function (j) {
+      state.projects = j.projects; state.heartbeat = j.heartbeat;
+      var want = new URLSearchParams(location.search).get('p') || state.current || store.get('project', null);
+      var ids = j.projects.map(function (p) { return p.id; });
+      state.current = ids.indexOf(want) >= 0 ? want : ids[0] || null;
+      $('#proj').innerHTML = j.projects.map(function (p) {
+        return '<option value="' + p.id + '"' + (p.id === state.current ? ' selected' : '') + '>' + esc(p.name) + '　' + p.pct + '%</option>';
+      }).join('') || '<option>' + esc(T('noProjects')) + '</option>';
+    });
+  }
+  function loadProject() {
+    if (!state.current) { render(); return Promise.resolve(); }
+    return fetch('/api/project/' + state.current).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      state.data = d;
+      if (state.view && state.view.type === 'milestone') return;
+      render();
+    });
+  }
+  function refresh() { return loadProjects().then(loadProject).catch(function () { $('#conn').classList.remove('on'); }); }
+
+  function connect() {
+    var es;
+    try { es = new EventSource('/events'); } catch (e) { return; }
+    es.onopen = function () { $('#conn').classList.add('on'); };
+    es.onerror = function () { $('#conn').classList.remove('on'); };
+    es.addEventListener('update', function () { refresh(); });
+  }
+  applyStatic();
+  loadStrings().catch(function () {}).then(refresh);
+  connect();
+  setInterval(refresh, 10000);                                       // backup when an embedded browser drops SSE
+  setInterval(function () { loadStrings().catch(function () {}); }, 60000); // picks up `progress lang` changes
+  setInterval(function () { if (state.data && !state.view) render(); }, 30000); // keeps relative times fresh
+})();
+</script>
+</body>
+</html>

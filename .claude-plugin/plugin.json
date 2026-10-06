@@ -1,0 +1,8 @@
+{
+  "name": "progress-hud",
+  "version": "0.2.0",
+  "description": "Live project progress for AI agents: project, feature and step progress in a side pane, a local dashboard and the status line",
+  "author": { "name": "Roland Chien" },
+  "keywords": ["progress", "todo", "dashboard", "hud", "hooks"],
+  "types": "./types/index.d.ts"
+}

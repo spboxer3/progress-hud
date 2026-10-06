@@ -1,0 +1,18 @@
+{
+  "name": "progress-hud",
+  "version": "0.1.0",
+  "description": "Hierarchical project progress HUD for Codex CLI/Desktop and Claude Code CLI/Desktop",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "progress": "bin/progress.mjs"
+  },
+  "scripts": {
+    "test": "node test/run.mjs && node test/install.mjs",
+    "serve": "node bin/server.mjs",
+    "test:pane": "claude plugin test ."
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'bin','hook.mjs')).href)\" codex",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'bin','hook.mjs')).href)\" codex",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(update_plan|apply_patch|Edit|Write|Bash|shell|exec_command|local_shell)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'bin','hook.mjs')).href)\" codex",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'bin','hook.mjs')).href)\" codex",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
