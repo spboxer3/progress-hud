@@ -1,0 +1,6 @@
+interface:
+  display_name: "Progress"
+  short_description: "Start the progress-hud server and open the dashboard"
+  default_prompt: "Use $progress to open the project progress dashboard."
+policy:
+  allow_implicit_invocation: false

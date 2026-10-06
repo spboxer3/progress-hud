@@ -61,7 +61,7 @@ flowchart LR
 | 工具 | 位置 |
 |---|---|
 | Codex Desktop | 在側邊欄開啟 `http://127.0.0.1:7788` |
-| Codex CLI | 用瀏覽器開啟 `http://127.0.0.1:7788` |
+| Codex CLI | 輸入 `/progress`（或 `$progress`），自動啟動伺服器並用瀏覽器開啟看板 |
 | Claude Code（CLI 與 Desktop） | 有計畫後，側邊欄會自動開啟「專案進度」面板；隨時輸入 `/progress` 也能打開 |
 | 有安裝 claude-hud 狀態列外掛的 Claude Code | 狀態列顯示進度百分比（選用，見下方） |
 
@@ -199,6 +199,8 @@ hook 自己出錯時絕對不會擋住 AI：錯誤寫進 `%LOCALAPPDATA%\progres
 /progress lang auto|en|zh-TW    設定介面語言
 ```
 
+在 Codex 裡，外掛提供一個 `progress` skill。輸入 `/progress` 或 `$progress`（或從 `/skills` 選 **Progress**），就會啟動伺服器並開啟目前專案的看板。安裝後要開新的工作階段，Codex 才會載入這個 skill。
+
 在終端機裡，`progress.cmd` 會指向已安裝的版本（hook 會自動保持它最新）：
 
 ```
@@ -247,6 +249,7 @@ npm run test:pane   Claude Code 側邊欄面板測試（需要 Claude Code）
 plugin.json            Codex 外掛資訊
 hooks/hooks.json       Claude Code 的 hook 與側邊欄模組
 hooks/codex-hooks.json Codex 的 hook
+codex-skills/          Codex 的 skill（`progress` 開啟看板）
 hooks/register.tsx     Claude Code 側邊欄面板
 bin/hook.mjs           兩種 AI 共用的 hook 入口
 bin/server.mjs         看板伺服器

@@ -61,7 +61,7 @@ flowchart LR
 | Tool | Where |
 |---|---|
 | Codex Desktop | Open `http://127.0.0.1:7788` in the side panel |
-| Codex CLI | Open `http://127.0.0.1:7788` in a browser |
+| Codex CLI | Type `/progress` (or `$progress`) to start the server and open the dashboard in a browser |
 | Claude Code (CLI and Desktop) | The **Project progress** side pane opens on its own once a plan exists; type `/progress` to open it at any time |
 | Claude Code with the claude-hud status line plugin | Progress percentage in the status line (optional, see below) |
 
@@ -199,6 +199,8 @@ In Claude Code:
 /progress lang auto|en|zh-TW    Set the interface language
 ```
 
+In Codex, the plugin adds a `progress` skill. Type `/progress` or `$progress` (or pick **Progress** from `/skills`) to start the server and open the current project's dashboard. Start a new session after installing so Codex loads the skill.
+
 In a terminal, `progress.cmd` points at the installed copy (the hooks keep it up to date):
 
 ```
@@ -247,6 +249,7 @@ npm run test:pane   Claude Code side pane tests (requires Claude Code)
 plugin.json            Codex plugin manifest
 hooks/hooks.json       Claude Code hooks and side pane module
 hooks/codex-hooks.json Codex hooks
+codex-skills/          Codex skills (`progress` opens the dashboard)
 hooks/register.tsx     Claude Code side pane
 bin/hook.mjs           Hook entry for both agents
 bin/server.mjs         Dashboard server

@@ -13,6 +13,7 @@
     "hud",
     "hooks"
   ],
+  "skills": "./codex-skills/",
   "extensions": {
     "com.openai": {
       "hooks": "./hooks/codex-hooks.json",
