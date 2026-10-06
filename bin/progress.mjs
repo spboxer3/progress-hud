@@ -4,7 +4,7 @@
 //   json [dir]              Full progress as JSON (used by the Claude side pane)
 //   hud [dir]               {"label": ...} for the claude-hud --extra-cmd status line
 //   serve                   Run the dashboard server in the foreground
-//   open [dir]              Open the dashboard (starts the server if needed)
+//   open [dir] [--force]    Open the dashboard unless one is already open (starts the server if needed)
 //   lang [auto|zh-TW|en]    Show or set the interface language
 //   plan <set|start|done|todo|add|remove|show> …   Update progress without a to-do tool
 //   statusline              Add progress to the claude-hud status line (optional)
@@ -28,6 +28,16 @@ function alive() {
       let b = ''; res.on('data', d => { b += d; }); res.on('end', () => r(b.includes('progress-hud')));
     });
     q.on('error', () => r(false)); q.on('timeout', () => { q.destroy(); r(false); });
+  });
+}
+
+// Number of dashboard pages currently connected to the server (live updates), 0 when unknown.
+function viewers() {
+  return new Promise(r => {
+    const q = http.get({ host: '127.0.0.1', port: core.PORT, path: '/health', timeout: 500 }, res => {
+      let b = ''; res.on('data', d => { b += d; }); res.on('end', () => { try { r(Number(JSON.parse(b).clients) || 0); } catch { r(0); } });
+    });
+    q.on('error', () => r(0)); q.on('timeout', () => { q.destroy(); r(0); });
   });
 }
 
@@ -85,9 +95,13 @@ async function main() {
       await import('./server.mjs');
       return;
     case 'open': {
-      const root = rootOf(arg);
+      const args = process.argv.slice(3);
+      const force = args.includes('--force');
+      const root = rootOf(args.find(a => a !== '--force'));
       if (!(await startServer())) { console.error(t('cli.serverFailed', { log: core.LOG_FILE })); process.exit(1); }
       const url = fs.existsSync(path.join(core.progressDir(root), 'project.json')) ? core.dashboardUrl(root) : `http://127.0.0.1:${core.PORT}/`;
+      // A dashboard that is already open (side panel or browser tab) updates itself; don't open another one.
+      if (!force && (await viewers()) > 0) { console.log(t('cli.openAlready')); console.log(url); return; }
       spawn('cmd', ['/c', 'start', '', url], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
       console.log(url);
       return;
