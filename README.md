@@ -157,6 +157,21 @@ Checks only read files inside the project; they never run commands. A step the a
 
 **Claude Code plan mode**: write features as `## F1 Feature name` headings and steps as `- [ ] F1.1 Step name` bullets. Progress is created as soon as you accept the plan.
 
+### When the agent has no to-do tool
+
+Some Codex tool interfaces do not offer `update_plan`. The hooks only see plans the agent writes with a to-do tool, so in that case nothing would be recorded. The rules the agent receives at session start therefore include a ready-to-run command for this session, and the agent uses it instead:
+
+```
+progress plan set "F1 Feature › F1.1 Step" "[~] F1 Feature › F1.2 Step" "[x] F1 Feature › F1.3 Step"
+progress plan start F1.2
+progress plan done F1.2
+progress plan add "F1 Feature › F1.4 Step"
+progress plan remove F1.4
+progress plan show
+```
+
+`[~]` marks a step in progress, `[x]` marks it done, and a step without a mark is to do. Run the command in the project folder, or pass `--dir <folder>`. Updates made this way count exactly like `update_plan`: they appear on the dashboard and satisfy the reminders. You can use the same command yourself to correct the progress.
+
 ## What the hooks do
 
 | Hook event | What happens |
@@ -208,6 +223,7 @@ In a terminal, `progress.cmd` points at the installed copy (the hooks keep it up
 %LOCALAPPDATA%\progress-hud\progress.cmd open [dir]      Open the dashboard (starts the server if needed)
 %LOCALAPPDATA%\progress-hud\progress.cmd serve           Run the server in the foreground
 %LOCALAPPDATA%\progress-hud\progress.cmd lang [auto|en|zh-TW]
+%LOCALAPPDATA%\progress-hud\progress.cmd plan set|start|done|add|remove|show …   Update progress by hand
 %LOCALAPPDATA%\progress-hud\progress.cmd statusline
 %LOCALAPPDATA%\progress-hud\progress.cmd doctor
 %LOCALAPPDATA%\progress-hud\progress.cmd uninstall      Undo a local-clone install and the status line integration
@@ -221,6 +237,7 @@ Removing the plugin through the marketplace (`claude plugin uninstall` / `codex 
 |---|---|
 | `doctor` says Codex has never reported | Trust the hooks with `/hooks` in Codex, then start a new session |
 | Dashboard cannot connect | Send any message to the agent, which restarts the server, or run `progress.cmd open` |
+| `doctor` shows hook reports but no plan updates | The hooks run, but the agent never wrote a to-do list. If its tool interface has no `update_plan`, it should use `progress plan` (see "When the agent has no to-do tool"); start a new session so it receives the rules again |
 | Everything is under Uncategorized | The agent is not using the `F<n> … › F<n>.<m> …` format; start a new session so it receives the rules again |
 | Claude side pane does not appear | Restart Claude Code, then type `/progress` |
 | Hooks run twice | Both a marketplace install and a local-clone install are active; run `progress.cmd uninstall` to remove the local one |

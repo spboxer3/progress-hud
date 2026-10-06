@@ -186,6 +186,50 @@ check('parseStep variants', (() => {
 const reg = core.readRegistry();
 check('heartbeat recorded for both agents', reg.heartbeat.codex && reg.heartbeat.claude);
 
+console.log('progress plan (agents without a to-do tool)');
+const CLI = path.join(HERE, '..', 'bin', 'progress.mjs');
+const P5 = path.join(TMP, 'cli plan');
+fs.mkdirSync(P5);
+const cli = (args, extraEnv = {}) => spawnSync(process.execPath, [CLI, 'plan', ...args, '--dir', P5], {
+  env: { ...process.env, LOCALAPPDATA: LOCAL, USERPROFILE: TMP, HOME: TMP, PROGRESS_HUD_NO_SERVER: '1', PROGRESS_HUD_LANG: 'zh-TW', ...extraEnv }, encoding: 'utf8',
+});
+const S5 = ['--agent', 'codex', '--session', 's5'];
+let c5 = cli(['set', ...S5, '[x] F1 登入 › F1.1 表單 [check: file login.html]', '[~] F1 登入 › F1.2 驗證', 'F2 文件 › F2.1 README [w:2]']);
+let a5 = core.aggregate(P5);
+check('plan set creates the project with statuses from [x] / [~]', c5.status === 0 && a5.total === 4 && a5.done === 1 && a5.current[0]?.key === 'F1.2', { code: c5.status, err: c5.stderr, total: a5.total, done: a5.done });
+check('plan set prints the dashboard URL', /127\.0\.0\.1:7788\/\?p=/.test(c5.stdout));
+c5 = cli(['done', ...S5, 'F1.2']); cli(['start', ...S5, 'F2.1']);
+a5 = core.aggregate(P5);
+check('plan done / start update one step each', c5.status === 0 && find(a5, 'F1.2').status === 'done' && find(a5, 'F2.1').status === 'doing');
+check('marks survive edits ([check:] and [w:])', find(a5, 'F1.1').check === 'file login.html' && find(a5, 'F2.1').weight === 2, { f11: find(a5, 'F1.1'), f21: find(a5, 'F2.1') });
+cli(['add', ...S5, 'F2 文件 › F2.2 CHANGELOG']);
+check('plan add appends a pending step', find(core.aggregate(P5), 'F2.2')?.status === 'todo');
+cli(['remove', ...S5, 'F2.2']);
+check('plan remove drops the step from the count (F2.1 weighs 2)', core.aggregate(P5).total === 4 && find(core.aggregate(P5), 'F2.2').missing === true, core.aggregate(P5).total);
+c5 = cli(['done', ...S5, 'F9.9']);
+check('unknown step id is refused', c5.status === 2 && /F9\.9/.test(c5.stderr));
+check('plan show lists the plan with marks', /\[x\] F1 登入 › F1\.1 表單/.test(cli(['show', ...S5]).stdout));
+check('plan updates are recorded for doctor', core.readRegistry().planEvents?.codex?.source === 'cli');
+const h5 = (payload) => spawnSync(process.execPath, [HOOK, 'codex'], {
+  input: JSON.stringify({ cwd: P5, session_id: 's5', ...payload }),
+  env: { ...process.env, LOCALAPPDATA: LOCAL, USERPROFILE: TMP, HOME: TMP, PROGRESS_HUD_NO_SERVER: '1' }, encoding: 'utf8',
+});
+h5({ hook_event_name: 'UserPromptSubmit', prompt: '繼續' });
+h5({ hook_event_name: 'PostToolUse', tool_name: 'apply_patch', tool_input: {} });
+cli(['done', ...S5, 'F2.1']);
+r = { out: h5({ hook_event_name: 'Stop', stop_hook_active: false }).stdout || null };
+check('a CLI update in the same session satisfies the Stop check', r.out === null, r.out);
+r = { out: JSON.parse(h5({ hook_event_name: 'SessionStart', source: 'startup' }).stdout || 'null') };
+const rules5 = r.out?.hookSpecificOutput?.additionalContext || '';
+check('rules include the ready-to-run plan command for this session', rules5.includes('progress.mjs" plan --agent codex --session s5 set') && rules5.includes('update_plan'), rules5.slice(0, 300));
+// a sandboxed shell may not reach %LOCALAPPDATA%: the project then exists only in the project folder
+const P6 = path.join(TMP, 'sandboxed');
+fs.mkdirSync(P6);
+spawnSync(process.execPath, [CLI, 'plan', 'set', 'F1 A › F1.1 B', '--dir', P6], { env: { ...process.env, LOCALAPPDATA: path.join(TMP, 'sandbox-lad'), PROGRESS_HUD_NO_SERVER: '1' }, encoding: 'utf8' });
+check('sandboxed CLI run left the real registry untouched', !Object.values(core.readRegistry().projects || {}).some(p => p.root === core.normPath(P6)));
+spawnSync(process.execPath, [HOOK, 'codex'], { input: JSON.stringify({ cwd: P6, session_id: 'x', hook_event_name: 'PostToolUse', tool_name: 'exec_command', tool_input: { cmd: 'ls' } }), env: { ...process.env, LOCALAPPDATA: LOCAL, USERPROFILE: TMP, HOME: TMP, PROGRESS_HUD_NO_SERVER: '1' }, encoding: 'utf8' });
+check('the next hook event registers that project for the dashboard', Object.values(core.readRegistry().projects || {}).some(p => p.root === core.normPath(P6)));
+
 console.log('Languages');
 const P4 = path.join(TMP, 'english');
 fs.mkdirSync(P4);

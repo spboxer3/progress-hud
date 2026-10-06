@@ -157,6 +157,21 @@ F2 SEO › F2.1 meta 標籤
 
 **Claude Code 的 plan mode**：功能寫成 `## F1 功能名` 標題，步驟寫成 `- [ ] F1.1 細項` 清單。你一同意計畫，進度就會建立。
 
+### AI 沒有待辦清單工具時
+
+有些 Codex 的工具介面不提供 `update_plan`。hook 只能看到 AI 用待辦清單工具寫的計畫，這種情況下就什麼都記錄不到。所以 AI 在開場收到的規則裡，會附上這個工作階段專用、可以直接執行的指令，讓 AI 改用指令更新進度：
+
+```
+progress plan set "F1 功能名 › F1.1 細項" "[~] F1 功能名 › F1.2 細項" "[x] F1 功能名 › F1.3 細項"
+progress plan start F1.2
+progress plan done F1.2
+progress plan add "F1 功能名 › F1.4 細項"
+progress plan remove F1.4
+progress plan show
+```
+
+`[~]` 代表進行中，`[x]` 代表完成，不加標記代表待做。請在專案資料夾執行，或加上 `--dir <資料夾>`。用這個方式更新的效果和 `update_plan` 完全一樣：會顯示在看板上，也算是有更新進度。你自己也可以用同一個指令修正進度。
+
 ## Hook 做了什麼
 
 | Hook 事件 | 會發生什麼 |
@@ -208,6 +223,7 @@ hook 自己出錯時絕對不會擋住 AI：錯誤寫進 `%LOCALAPPDATA%\progres
 %LOCALAPPDATA%\progress-hud\progress.cmd open [資料夾]     開啟看板（需要時自動啟動伺服器）
 %LOCALAPPDATA%\progress-hud\progress.cmd serve            在前景執行伺服器
 %LOCALAPPDATA%\progress-hud\progress.cmd lang [auto|en|zh-TW]
+%LOCALAPPDATA%\progress-hud\progress.cmd plan set|start|done|add|remove|show …   手動更新進度
 %LOCALAPPDATA%\progress-hud\progress.cmd statusline
 %LOCALAPPDATA%\progress-hud\progress.cmd doctor
 %LOCALAPPDATA%\progress-hud\progress.cmd uninstall        移除本機複本安裝與狀態列整合
@@ -221,6 +237,7 @@ hook 自己出錯時絕對不會擋住 AI：錯誤寫進 `%LOCALAPPDATA%\progres
 |---|---|
 | `doctor` 顯示 Codex 從未回報 | 在 Codex 用 `/hooks` 信任 hook，再開一個新的工作階段 |
 | 看板連不上 | 對 AI 送出任何訊息（會重新啟動伺服器），或執行 `progress.cmd open` |
+| `doctor` 顯示 hook 有回報、但沒收過計畫更新 | hook 有在執行，但 AI 從沒寫過待辦清單。如果它的工具介面沒有 `update_plan`，應該改用 `progress plan`（見「AI 沒有待辦清單工具時」）；開一個新的工作階段，讓它重新收到規則 |
 | 全部步驟都在「未分類」 | AI 沒有使用 `F<n> … › F<n>.<m> …` 格式；開一個新的工作階段，讓它重新收到規則 |
 | Claude 側邊欄面板沒出現 | 重新啟動 Claude Code，再輸入 `/progress` |
 | hook 執行了兩次 | 同時有 marketplace 安裝和本機複本安裝；執行 `progress.cmd uninstall` 移除本機的那一份 |

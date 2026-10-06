@@ -204,6 +204,8 @@ export async function doctor() {
   for (const a of ['codex', 'claude']) {
     const h = reg.heartbeat?.[a];
     ok(!!h, t('install.dHook', { agent: a, info: h ? `${h.at} (${h.event})` : t('install.dHookNever') }));
+    const pe = reg.planEvents?.[a];
+    ok(!!pe, t('install.dPlan', { agent: a, info: pe ? `${pe.at} (${pe.source})` : t('install.dPlanNever') }));
   }
   ok(await alive(), t('install.dServer', { url: `http://127.0.0.1:${core.PORT}` }));
   const cs = readJsonFile(CLAUDE_SETTINGS, {});

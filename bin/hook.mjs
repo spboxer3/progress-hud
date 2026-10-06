@@ -120,7 +120,9 @@ async function onPlanTool(ev, root) {
     result = core.applyTask(s, task);
   }
   s.paused = false;
+  s.planSource = tool;
   s.raw = [...(s.raw || []), { at: core.now(), tool, input }].slice(-5);
+  core.recordPlanEvent(AGENT, tool, root);
   const notes = [];
   const live = Object.values(s.versions.at(-1)?.items || {}).filter(i => !i.missing && i.status !== 'deleted');
   if (result.unformatted?.length && live.length >= 3 && s.formatNags < 3) {
@@ -166,7 +168,7 @@ function rulesAlreadyInstalled() {
 
 async function onSessionStart(ev, root) {
   try { (await import('./install.mjs')).writeHudShim(); } catch (e) { core.logError('hud-shim', e); }
-  const rules = rulesAlreadyInstalled() ? '' : rulesText(AGENT);
+  const rules = rulesAlreadyInstalled() ? '' : rulesText(AGENT, undefined, { cli: path.join(HERE, 'progress.mjs').split(path.sep).join('/'), session: ev.session_id });
   if (!hasProject(root)) return rules ? ctx('SessionStart', rules) : null;
   await ensureServer();
   const agg = core.aggregate(root, { withChecks: false });

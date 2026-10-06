@@ -6,6 +6,7 @@
 //   serve                   Run the dashboard server in the foreground
 //   open [dir]              Open the dashboard (starts the server if needed)
 //   lang [auto|zh-TW|en]    Show or set the interface language
+//   plan <set|start|done|todo|add|remove|show> …   Update progress without a to-do tool
 //   statusline              Add progress to the claude-hud status line (optional)
 //   install                 Local-clone install: Codex hooks + Claude plugin folder (backs up first)
 //   uninstall               Remove everything install added
@@ -91,6 +92,11 @@ async function main() {
       console.log(url);
       return;
     }
+    case 'plan': {
+      const { runPlan } = await import('./plan.mjs');
+      process.exitCode = await runPlan(process.argv.slice(3), { startServer });
+      return;
+    }
     case 'lang': {
       if (arg) {
         setLang(arg);
@@ -109,7 +115,7 @@ async function main() {
       return;
     }
     default:
-      console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 12).map(l => l.replace(/^\/\/ ?/, '')).join('\n'));
+      console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 13).map(l => l.replace(/^\/\/ ?/, '')).join('\n'));
   }
 }
 main().catch(e => { console.error(e.message || e); process.exit(1); });
