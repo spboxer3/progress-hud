@@ -21,6 +21,41 @@ F2 SEO                              1/2  50%
    ○ F2.2 sitemap
 ```
 
+## 快速上手
+
+需要 Node.js 20 以上。
+
+1. 依你使用的工具安裝外掛：
+
+   ```
+   claude plugin marketplace add spboxer3/progress-hud
+   claude plugin install progress-hud@progress-hud
+
+   codex plugin marketplace add spboxer3/progress-hud
+   codex plugin add progress-hud@progress-hud
+   ```
+
+2. 重新啟動 Claude Code。Codex 則開一個新的工作階段，輸入 `/hooks`，信任 progress-hud 的 hook。
+3. 交給 AI 一個任務。AI 一寫好待辦清單，進度就會出現在 `http://127.0.0.1:7788`；在 Claude Code 裡也會出現在側邊欄面板（`/progress`）。
+
+## 運作方式
+
+```mermaid
+flowchart LR
+    A["AI 助手<br/>Codex 或 Claude Code"] -->|"寫入、更新待辦清單"| H["progress-hud hooks"]
+    H -->|"開場告知規則、<br/>提醒更新進度、<br/>結束前要求補上"| A
+    H -->|"儲存進度"| D[("專案/.progress/")]
+    D --> S["本機伺服器<br/>127.0.0.1:7788"]
+    S --> W["看板網頁<br/>Codex Desktop 側邊欄或瀏覽器"]
+    D --> P["Claude Code 側邊欄面板"]
+    D --> L["claude-hud 狀態列"]
+```
+
+1. AI 先把任務規劃成待辦清單：Codex 用 `update_plan`；Claude Code 用 `TodoWrite`、`TaskCreate` / `TaskUpdate` 或 plan mode。
+2. hook 讀取每一次清單更新，把步驟分成功能（`F1`、`F2`…）和細項（`F1.1`、`F1.2`…），存進專案的 `.progress/` 資料夾。
+3. 看板網頁、Claude Code 側邊欄面板和狀態列都從這個資料夾讀取，所以顯示的進度永遠一致。
+4. 同一組 hook 也會盯著 AI：每次開場告訴它步驟格式；它改了檔案卻沒更新進度時會提醒它，並在這一輪結束前要求它補上一次。
+
 ## 在哪裡看進度
 
 | 工具 | 位置 |

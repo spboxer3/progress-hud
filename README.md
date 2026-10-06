@@ -21,6 +21,41 @@ F2 SEO                              1/2  50%
    ○ F2.2 Sitemap
 ```
 
+## Quick start
+
+Requires Node.js 20 or newer.
+
+1. Install the plugin for the tools you use:
+
+   ```
+   claude plugin marketplace add spboxer3/progress-hud
+   claude plugin install progress-hud@progress-hud
+
+   codex plugin marketplace add spboxer3/progress-hud
+   codex plugin add progress-hud@progress-hud
+   ```
+
+2. Restart Claude Code. In Codex, start a new session, run `/hooks` and trust the progress-hud hooks.
+3. Give the agent a task. As soon as it writes its to-do list, progress appears at `http://127.0.0.1:7788` and, in Claude Code, in the side pane (`/progress`).
+
+## How it works
+
+```mermaid
+flowchart LR
+    A["AI agent<br/>Codex or Claude Code"] -->|"writes and updates its to-do list"| H["progress-hud hooks"]
+    H -->|"rules at session start,<br/>progress reminders,<br/>asks to update before stopping"| A
+    H -->|"saves progress"| D[("project/.progress/")]
+    D --> S["Local server<br/>127.0.0.1:7788"]
+    S --> W["Dashboard<br/>Codex Desktop side panel or browser"]
+    D --> P["Claude Code side pane"]
+    D --> L["claude-hud status line"]
+```
+
+1. The agent plans the task as a to-do list: `update_plan` in Codex; `TodoWrite`, `TaskCreate` / `TaskUpdate` or plan mode in Claude Code.
+2. The hooks read every list update, split the steps into features (`F1`, `F2`, …) and steps (`F1.1`, `F1.2`, …), and save them in the project's `.progress/` folder.
+3. The dashboard, the Claude Code side pane and the status line all read from that folder, so they always show the same progress.
+4. The same hooks keep the agent on track: they give it the step format at the start of each session, and when it edits files without updating progress, they remind it and ask it once to update before it finishes the turn.
+
 ## Where you see it
 
 | Tool | Where |
